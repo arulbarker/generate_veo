@@ -1,0 +1,5 @@
+{
+  "name": "Generative Media Studio",
+  "description": "A web application to generate high-quality videos and edit images using Google's latest models. Create videos with VEO or edit images with Nano Banana.",
+  "requestFramePermissions": []
+}

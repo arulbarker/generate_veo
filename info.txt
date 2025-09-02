@@ -1,0 +1,1063 @@
+Membuat video dengan Veo 3 di Gemini API
+
+Veo 3 adalah model canggih Google untuk membuat video 720p berdurasi 8 detik dengan fidelitas tinggi dari perintah teks, yang menampilkan realisme yang memukau dan audio yang dibuat secara native. Anda dapat mengakses model ini secara terprogram menggunakan Gemini API. Veo 3 unggul dalam berbagai gaya visual dan sinematik. Untuk mempelajari lebih lanjut varian model Veo yang tersedia, lihat bagian Versi Model.
+
+Pilih contoh untuk melihat cara membuat video dengan dialog, realisme sinematik, atau animasi kreatif:
+
+Dialog & Efek Suara Realisme Sinematik Animasi Kreatif
+
+Python
+JavaScript
+Go
+REST
+
+import time
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+prompt = """A close up of two people staring at a cryptic drawing on a wall, torchlight flickering.
+A man murmurs, 'This must be it. That's the secret code.' The woman looks at him and whispering excitedly, 'What did you find?'"""
+
+operation = client.models.generate_videos(
+    model="veo-3.0-generate-preview",
+    prompt=prompt,
+)
+
+# Poll the operation status until the video is ready.
+while not operation.done:
+    print("Waiting for video generation to complete...")
+    time.sleep(10)
+    operation = client.operations.get(operation)
+
+# Download the generated video.
+generated_video = operation.response.generated_videos[0]
+client.files.download(file=generated_video.video)
+generated_video.video.save("dialogue_example.mp4")
+print("Generated video saved to dialogue_example.mp4")
+
+
+Membuat video dari gambar
+Kode berikut menunjukkan cara membuat gambar menggunakan Imagen, lalu menggunakan gambar tersebut sebagai frame awal untuk membuat video dengan Veo 3.
+
+Python
+JavaScript
+Go
+
+import time
+from google import genai
+
+client = genai.Client()
+
+prompt = "Panning wide shot of a calico kitten sleeping in the sunshine"
+
+# Step 1: Generate an image with Imagen.
+imagen = client.models.generate_images(
+    model="imagen-3.0-generate-002",
+    prompt=prompt,
+)
+
+# Step 2: Generate video with Veo 3 using the image.
+operation = client.models.generate_videos(
+    model="veo-3.0-generate-preview",
+    prompt=prompt,
+    image=imagen.generated_images[0].image,
+)
+
+# Poll the operation status until the video is ready.
+while not operation.done:
+    print("Waiting for video generation to complete...")
+    time.sleep(10)
+    operation = client.operations.get(operation)
+
+# Download the video.
+video = operation.response.generated_videos[0]
+client.files.download(file=video.video)
+video.video.save("veo3_with_image_input.mp4")
+print("Generated video saved to veo3_with_image_input.mp4")
+Parameter dan spesifikasi Veo API
+Berikut adalah parameter yang dapat Anda tetapkan dalam permintaan API untuk mengontrol proses pembuatan video.
+
+Parameter	Deskripsi	Veo 3 & Veo 3 Fast (Pratinjau)	Veo 2 (Stabil)
+prompt	Deskripsi teks untuk video. Mendukung isyarat audio.	string	string
+negativePrompt	Teks yang menjelaskan apa yang tidak boleh disertakan dalam video.	string	string
+image	Gambar awal yang akan dianimasikan.	Objek Image	Objek Image
+aspectRatio	Rasio aspek video.	"16:9"	"16:9", "9:16"
+personGeneration	Mengontrol pembuatan orang.
+(Lihat Batasan untuk mengetahui batasan wilayah)	Teks ke video:
+"allow_all" saja
+Gambar ke video:
+"allow_adult" saja	Text-to-video:
+"allow_all", "allow_adult", "dont_allow"
+Image-to-video:
+"allow_adult", dan "dont_allow"
+Anda dapat menyesuaikan pembuatan video dengan menetapkan parameter dalam permintaan. Misalnya, Anda dapat menentukan negativePrompt untuk memandu model.
+
+Python
+JavaScript
+Go
+REST
+
+import time
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+operation = client.models.generate_videos(
+    model="veo-3.0-generate-preview",
+    prompt="A cinematic shot of a majestic lion in the savannah.",
+    config=types.GenerateVideosConfig(negative_prompt="cartoon, drawing, low quality"),
+)
+
+# Poll the operation status until the video is ready.
+while not operation.done:
+    print("Waiting for video generation to complete...")
+    time.sleep(10)
+    operation = client.operations.get(operation)
+
+# Download the generated video.
+generated_video = operation.response.generated_videos[0]
+client.files.download(file=generated_video.video)
+generated_video.video.save("parameters_example.mp4")
+print("Generated video saved to parameters_example.mp4")
+Menangani operasi asinkron
+Pembuatan video adalah tugas yang intensif secara komputasi. Saat Anda mengirim permintaan ke API, API akan memulai tugas yang berjalan lama dan segera menampilkan objek operation. Kemudian, Anda harus melakukan polling hingga video siap, yang ditunjukkan oleh done status yang benar.
+
+Inti dari proses ini adalah loop polling, yang secara berkala memeriksa status tugas.
+
+Python
+JavaScript
+
+import time
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+# After starting the job, you get an operation object.
+operation = client.models.generate_videos(
+    model="veo-3.0-generate-preview",
+    prompt="A cinematic shot of a majestic lion in the savannah.",
+)
+
+# Alternatively, you can use operation.name to get the operation.
+operation = types.GenerateVideosOperation(name=operation.name)
+
+# This loop checks the job status every 10 seconds.
+while not operation.done:
+    time.sleep(10)
+    # Refresh the operation object to get the latest status.
+    operation = client.operations.get(operation)
+
+# Once done, the result is in operation.response.
+# ... process and download your video ...
+Fitur model
+Fitur	Deskripsi	Veo 3 & Veo 3 Fast (Pratinjau)	Veo 2 (Stabil)
+Audio	Membuat audio dengan video secara native.	✔️ Selalu aktif	❌ Hanya senyap
+Modalitas Input	Jenis input yang digunakan untuk pembuatan.	Teks ke Video, Gambar ke Video	Teks ke Video, Gambar ke Video
+Resolusi	Resolusi output video.	720p	720p
+Frekuensi Frame	Frekuensi gambar output video.	24 fps	24 fps
+Durasi Video	Durasi video yang dihasilkan.	8 detik	5-8 detik
+Video per Permintaan	Jumlah video yang dibuat per permintaan.	1	1 atau 2
+Status & Detail	Ketersediaan model dan detail selengkapnya.	Pratinjau	Stabil
+Lihat bagian Versi model, serta halaman Harga dan Batas laju untuk mengetahui detail penggunaan Veo selengkapnya.
+
+Panduan perintah Veo
+Bagian ini berisi contoh video yang dapat Anda buat menggunakan Veo, dan menunjukkan cara mengubah perintah untuk menghasilkan hasil yang berbeda.
+
+Filter keamanan
+Veo menerapkan filter keamanan di Gemini untuk membantu memastikan bahwa video yang dihasilkan dan foto yang diupload tidak berisi konten yang menyinggung. Perintah yang melanggar persyaratan dan pedoman kami akan diblokir.
+
+Dasar-dasar penulisan perintah
+Perintah yang baik bersifat deskriptif dan jelas. Untuk mendapatkan hasil maksimal dari Veo, mulailah dengan mengidentifikasi ide inti Anda, pertajam ide Anda dengan menambahkan kata kunci dan pengubah, serta sertakan terminologi khusus video ke dalam perintah Anda.
+
+Elemen berikut harus disertakan dalam perintah Anda:
+
+Subjek: Objek, orang, hewan, atau pemandangan yang Anda inginkan dalam video, seperti pemandangan kota, alam, kendaraan, atau anak.
+Tindakan: Apa yang dilakukan subjek (misalnya, berjalan, berlari, atau menolehkan kepala).
+Gaya: Tentukan arah kreatif menggunakan kata kunci gaya film tertentu, seperti sci-fi, film horor, film noir, atau gaya animasi seperti kartun.
+Pemosisian dan gerakan kamera: [Opsional] Kontrol lokasi dan gerakan kamera menggunakan istilah seperti tampilan udara, sejajar mata, bidikan dari atas, bidikan dolly, atau sudut pandang cacing.
+Komposisi: [Opsional] Cara pengambilan gambar, seperti wide shot, close-up, single-shot, atau two-shot.
+Efek fokus dan lensa: [Opsional] Gunakan istilah seperti fokus dangkal, fokus dalam, fokus lembut, lensa makro, dan lensa sudut lebar untuk mendapatkan efek visual tertentu.
+Suasana: [Opsional] Bagaimana warna dan cahaya berkontribusi pada pemandangan, seperti nuansa biru, malam, atau nuansa hangat.
+Tips lainnya untuk menulis perintah
+Gunakan bahasa deskriptif: Gunakan kata sifat dan kata keterangan untuk memberikan gambaran yang jelas kepada Veo.
+Meningkatkan kualitas detail wajah: Tentukan detail wajah sebagai fokus foto, seperti menggunakan kata potret dalam perintah.
+Untuk strategi penulisan perintah yang lebih komprehensif, buka Pengantar desain perintah.
+
+Meminta audio
+Dengan Veo 3, Anda dapat memberikan isyarat untuk efek suara, suara bising sekitar, dan dialog. Model ini menangkap nuansa isyarat ini untuk menghasilkan soundtrack yang disinkronkan.
+
+Dialog: Gunakan tanda petik untuk ucapan tertentu. (Contoh: "Ini pasti kuncinya," gumamnya.)
+Efek Suara (SFX): Mendeskripsikan suara secara eksplisit. (Contoh: ban berdecit keras, deru mesin.)
+Suara Latar: Jelaskan lanskap suara lingkungan. (Contoh: Suara dengungan samar dan aneh beresonansi di latar belakang.)
+Video ini menunjukkan cara memberikan perintah pada pembuatan audio Veo 3 dengan tingkat detail yang berbeda-beda.
+
+Perintah	Output yang dihasilkan
+Detail lainnya (Dialog dan Suasana)
+Dua orang menatap gambar misterius di dinding, cahaya obor berkedip-kedip. "Ini pasti kuncinya," gumamnya sambil menelusuri pola. "Tapi apa artinya?" tanyanya, bingung, sambil memiringkan kepalanya. Batu lembap, ukiran rumit, simbol tersembunyi. Dengungan samar dan aneh beresonansi di latar belakang.	Pemburu harta karun di dalam gua.
+Lebih sedikit detail (Dialog)
+Berkemah (Stop Motion): Camper: "Sekarang aku menyatu dengan alam!" Beruang: "Alam lebih menyukai ruang pribadi".	Pemburu harta karun di dalam gua.
+Coba sendiri perintah ini untuk mendengar audionya. Coba Veo 3
+
+Menggunakan gambar referensi untuk membuat video
+Anda dapat menganimasikan objek sehari-hari, menghidupkan gambar dan lukisan, serta menambahkan gerakan dan suara ke pemandangan alam, menggunakan kemampuan image-to-video Veo.
+
+Perintah	Output yang dihasilkan
+Gambar Input (Dibuat oleh Imagen)
+Kelinci dengan batang permen cokelat.	Kelinci sedang melarikan diri.
+Video Output (Dibuat oleh Veo 3)
+Kelinci melarikan diri.	Kelinci sedang melarikan diri.
+Tips: Untuk hasil terbaik dan progres yang lebih alami, pilih foto yang paling mendekati apa yang Anda bayangkan sebagai adegan pertama video, karena Veo menggunakan foto sebagai frame awal.
+Contoh perintah dan output
+Bagian ini menyajikan beberapa perintah, yang menyoroti bagaimana detail deskriptif dapat meningkatkan hasil setiap video.
+
+Bunga Es
+Video ini menunjukkan cara menggunakan elemen dasar-dasar penulisan perintah dalam perintah Anda.
+
+Perintah	Output yang dihasilkan
+Bidikan close-up (komposisi) tetesan air yang mencair (subjek) di dinding batu beku (konteks) dengan nuansa biru dingin (suasana), diperbesar (gerakan kamera) sambil mempertahankan detail close-up tetesan air (tindakan).	Tetesan es dengan latar belakang biru.
+Pria sedang menelepon
+Video ini menunjukkan cara merevisi perintah Anda dengan detail yang semakin spesifik agar Veo menyempurnakan output sesuai keinginan Anda.
+
+Perintah	Output yang dihasilkan
+Lebih sedikit detail
+Kamera bergerak untuk menampilkan close-up seorang pria putus asa yang mengenakan jas hujan hijau. Dia sedang menelepon menggunakan telepon dinding putar dengan lampu neon hijau. Ini terlihat seperti adegan film.	Pria sedang berbicara di telepon.
+Detail selengkapnya
+Bidikan sinematik jarak dekat mengikuti seorang pria putus asa yang mengenakan jas hujan hijau lusuh saat ia memutar telepon putar yang terpasang di dinding bata yang kotor, bermandikan cahaya aneh dari tanda neon hijau. Kamera bergerak mendekat, memperlihatkan ketegangan di rahangnya dan keputusasaan yang terukir di wajahnya saat ia berjuang untuk melakukan panggilan. Kedalaman bidang gambar yang dangkal berfokus pada alisnya yang berkerut dan telepon putar hitam, mengaburkan latar belakang menjadi lautan warna neon dan bayangan yang tidak jelas, sehingga menciptakan rasa urgensi dan isolasi.	Pria sedang menelepon
+Macan tutul salju
+Perintah	Output yang dihasilkan
+Perintah sederhana:
+Makhluk lucu dengan bulu seperti macan tutul salju sedang berjalan di hutan musim dingin, rendering gaya kartun 3D.	Macan tutul salju terlihat lesu.
+Perintah mendetail:
+Buat adegan animasi 3D pendek dalam gaya kartun yang ceria. Makhluk imut dengan bulu seperti macan tutul salju, mata besar yang ekspresif, dan bentuk bulat yang ramah, dengan riang melompat-lompat di hutan musim dingin yang unik. Pemandangan harus menampilkan pohon bulat yang tertutup salju, kepingan salju yang jatuh dengan lembut, dan sinar matahari hangat yang menembus dahan. Gerakan makhluk yang melompat-lompat dan senyum lebar harus menyampaikan kegembiraan murni. Gunakan gaya bahasa yang ceria dan menyentuh hati dengan warna-warna cerah dan animasi yang menyenangkan.	Snow Leopard berjalan lebih cepat.
+Contoh menurut elemen penulisan
+Contoh ini menunjukkan cara menyempurnakan perintah Anda berdasarkan setiap elemen dasar.
+
+Subjek dan konteks
+Tentukan fokus utama (subjek) dan latar belakang atau lingkungan (konteks).
+
+Perintah	Output yang dihasilkan
+Rendering arsitektur bangunan apartemen beton putih dengan bentuk organik yang mengalir, yang berpadu mulus dengan tanaman hijau yang rimbun dan elemen futuristik	Placeholder.
+Satelit mengambang di luar angkasa dengan bulan dan beberapa bintang di latar belakang.	Satelit mengapung di atmosfer.
+Tindakan
+Tentukan apa yang dilakukan subjek (misalnya, berjalan, berlari, atau menoleh).
+
+Perintah	Output yang dihasilkan
+Gambar lebar seorang wanita berjalan di sepanjang pantai, tampak puas dan santai saat melihat ke arah cakrawala saat matahari terbenam.	Matahari terbenam sangat indah.
+Gaya
+Tambahkan kata kunci untuk mengarahkan pembuatan ke estetika tertentu (misalnya, surealis, vintage, futuristik, film noir).
+
+Perintah	Output yang dihasilkan
+Gaya film noir, pria dan wanita berjalan di jalan, misteri, sinematik, hitam putih.	Gaya film noir sangat indah.
+Gerakan dan komposisi kamera
+Tentukan cara kamera bergerak (bidikan POV, tampilan udara, tampilan drone pelacak) dan cara pengambilan gambar (bidikan lebar, close-up, sudut rendah).
+
+Perintah	Output yang dihasilkan
+Bidikan POV dari mobil vintage yang melaju di tengah hujan, Kanada pada malam hari, sinematik.	Matahari terbenam sangat indah.
+Close-up ekstrem mata dengan pantulan kota di dalamnya.	Matahari terbenam sangat indah.
+Suasana
+Palet warna dan pencahayaan memengaruhi suasana hati. Coba istilah seperti "oranye redup nuansa hangat", "cahaya alami", "matahari terbit", atau "nuansa biru dingin".
+
+Perintah	Output yang dihasilkan
+Tampilan dekat seorang gadis yang memegang anak golden retriever yang menggemaskan di taman, sinar matahari.	Anak dalam pelukan seorang anak perempuan.
+Bidikan sinematik jarak dekat seorang wanita sedih yang sedang menaiki bus saat hujan, dengan nuansa biru dingin dan suasana sedih.	Seorang perempuan yang sedang naik bus tampak sedih.
+Perintah negatif
+Perintah negatif menentukan elemen yang tidak Anda inginkan dalam video.
+
+❌ Jangan gunakan bahasa instruktif seperti tidak atau jangan. (mis., "Tanpa dinding").
+✅ Jelaskan hal yang tidak ingin Anda lihat. (mis., "dinding, bingkai").
+Perintah	Output yang dihasilkan
+Tanpa Perintah Negatif:
+Buat animasi pendek bergaya dari pohon oak besar yang berdiri sendiri dengan daun-daun yang tertiup angin kencang... [truncated]	Struktur dengan menggunakan kata-kata.
+Dengan Perintah Negatif:
+[Perintah yang sama]
+
+Perintah negatif: latar belakang perkotaan, struktur buatan manusia, suasana gelap, badai, atau mengancam.	Struktur tanpa kata negatif.
+Rasio aspek
+Veo memungkinkan Anda menentukan rasio aspek untuk video Anda.
+
+Perintah	Output yang dihasilkan
+Layar lebar (16:9)
+Buat video dengan tampilan drone pelacak seorang pria yang mengendarai mobil convertible merah di Palm Springs, tahun 1970-an, sinar matahari hangat, bayangan panjang.	Seorang pria mengendarai mobil convertible merah di Palm Springs, dengan gaya tahun 1970-an.
+Potret (9:16 - Khusus Veo 2)
+Buat video yang menyoroti gerakan halus air terjun Hawaii yang megah di dalam hutan hujan yang rimbun. Berfokus pada aliran air yang realistis, dedaunan yang detail, dan pencahayaan alami untuk menyampaikan ketenangan. Abadikan air yang mengalir deras, suasana berkabut, dan sinar matahari yang menembus kanopi hutan yang lebat. Gunakan gerakan kamera yang halus dan sinematik untuk menampilkan air terjun dan sekitarnya. Gunakan nada yang tenang dan realistis, yang membawa penonton ke keindahan hutan hujan Hawaii yang tenang.	Air terjun Hawaii yang megah di hutan hujan yang rimbun.
+Batasan
+Latensi permintaan: Min: 11 detik; Maks: 6 menit (selama jam sibuk).
+Batasan regional: Di lokasi Uni Eropa, Inggris Raya, Swiss, MENA, berikut adalah nilai yang diizinkan untuk personGeneration:
+Veo 3: allow_adult saja.
+Veo 2: dont_allow dan allow_adult. Jumlah defaultnya adalah dont_allow
+Retensi video: Video yang dibuat disimpan di server selama 2 hari, setelah itu video akan dihapus. Untuk menyimpan salinan lokal, Anda harus mendownload video dalam waktu 2 hari setelah dibuat.
+Watermarking: Video yang dibuat oleh Veo diberi watermark menggunakan SynthID, alat kami untuk memberi watermark dan mengidentifikasi konten buatan AI.
+Keamanan: Video yang dihasilkan melewati filter keamanan dan proses pemeriksaan memori yang membantu mengurangi risiko privasi, hak cipta, dan bias.
+Error audio: Terkadang Veo 3 akan mencegah pembuatan video karena filter keamanan atau masalah pemrosesan audio lainnya. Anda tidak akan ditagih jika video Anda diblokir agar tidak dibuat.
+Versi model
+Pratinjau Veo 3
+Properti	Deskripsi
+Kode model 
+Gemini API
+
+veo-3.0-generate-preview
+
+Jenis data yang didukung
+Input
+
+Teks, Gambar
+
+Output
+
+Video dengan audio
+
+Batas 
+Input teks
+
+1.024 token
+
+Video output
+
+1
+
+Pembaruan terbaru	Juli 2025
+Pratinjau Veo 3 Fast
+Veo 3 Fast memungkinkan developer membuat video dengan suara sekaligus mempertahankan kualitas tinggi dan mengoptimalkan kecepatan serta kasus penggunaan bisnis. API ini ideal untuk layanan backend yang membuat iklan secara terprogram, alat untuk pengujian A/B cepat konsep materi iklan, atau aplikasi yang perlu membuat konten media sosial dengan cepat.
+Properti	Deskripsi
+Kode model 
+Gemini API
+
+veo-3.0-fast-generate-preview
+
+Jenis data yang didukung
+Input
+
+Teks, Gambar
+
+Output
+
+Video dengan audio
+
+Batas 
+Input teks
+
+1.024 token
+
+Video output
+
+1
+
+Pembaruan terbaru	Juli 2025
+Veo 2
+Properti	Deskripsi
+Kode model 
+Gemini API
+
+veo-2.0-generate-001
+
+Jenis data yang didukung
+Input
+
+Teks, gambar
+
+Output
+
+Video
+
+Batas 
+Input teks
+
+T/A
+
+Input gambar
+
+Resolusi dan rasio aspek gambar apa pun hingga ukuran file 20 MB
+
+Video output
+
+Maksimal 2
+
+Pembaruan terbaru	April 2025
+
+from google import genai
+
+client = genai.Client()
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Explain how AI works in a few words",
+)
+
+print(response.text)
+
+Veo on Vertex AI API
+
+bookmark_border
+Release Notes
+Veo is the name of the model that supports video generation. Veo generates a video from a text prompt or an image prompt that you provide. For more information about Veo, see Veo video generation overview.
+
+To explore this model in the console, see the Video Generation model card in the Model Garden.
+
+Note: To generate videos from an image, use one of the following models:
+
+veo-2.0-generate-001
+veo-2.0-generate-exp
+veo-3.0-generate-preview
+Try Veo on Vertex AI (Vertex AI Studio)
+
+Try Veo in a Colab
+
+Supported Models
+Veo API supports the following models:
+
+veo-2.0-generate-001
+veo-2.0-generate-exp
+veo-3.0-generate-001
+veo-3.0-fast-generate-001
+veo-3.0-generate-preview (Preview)
+veo-3.0-fast-generate-preview (Preview)
+HTTP request
+
+
+curl -X POST \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" \
+https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:predictLongRunning \
+
+-d '{
+  "instances": [
+    {
+      "prompt": string,
+      "image": {
+        // Union field can be only one of the following:
+        "bytesBase64Encoded": string,
+        "gcsUri": string,
+        // End of list of possible types for union field.
+        "mimeType": string
+      },
+      "lastFrame": {
+        // Union field can be only one of the following:
+        "bytesBase64Encoded": string,
+        "gcsUri": string,
+        // End of list of possible types for union field.
+        "mimeType": string
+      },
+      "video": {
+        // Union field can be only one of the following:
+        "bytesBase64Encoded": string,
+        "gcsUri": string,
+        // End of list of possible types for union field.
+        "mimeType": string
+      },
+      "referenceImages": [
+        // A list of up to three asset images or at most one style image for the
+        // model to use when generating videos.
+        //
+        // referenceImages is supported by veo-2.0-generate-exp in Preview
+        {
+        "image:" {
+          // Union field can be only one of the following:
+          "bytesBase64Encoded": string,
+          "gcsUri": string,
+          // End of list of possible types for union field.
+          "mimeType": string
+        },
+        "referenceType": string
+        }
+      ]
+    }
+  ],
+  "parameters": {
+    "aspectRatio": string,
+    "durationSeconds": integer,
+    "enhancePrompt": boolean,
+    "generateAudio": boolean,
+    "negativePrompt": string,
+    "personGeneration": string,
+    "resolution": string, // Veo 3 models only
+    "sampleCount": integer,
+    "seed": uint32,
+    "storageUri": string
+  }
+}'
+Instances
+Instances
+prompt
+
+string
+
+Required for text-to-video.
+Optional if an input image prompt is provided (image-to-video).
+
+A text string to guide the first eight seconds in the video. For example:
+
+A fast-tracking shot through a bustling dystopian sprawl with bright neon signs, flying cars and mist, night, lens flare, volumetric lighting
+A neon hologram of a car driving at top speed, speed of light, cinematic, incredible details, volumetric lighting
+Many spotted jellyfish pulsating under water. Their bodies are transparent and glowing in deep ocean
+extreme close-up with a shallow depth of field of a puddle in a street. reflecting a busy futuristic Tokyo city with bright neon signs, night, lens flare
+Timelapse of the northern lights dancing across the Arctic sky, stars twinkling, snow-covered landscape
+A lone cowboy rides his horse across an open plain at beautiful sunset, soft light, warm colors
+image	
+Union field
+
+Optional. An image to guide video generation, which can be either a bytesBase64Encoded string that encodes an image or a gcsUri string URI to a Cloud Storage bucket location.
+
+Image-to-video is supported by the following models:
+
+veo-3.0-fast-generate-001
+veo-3.0-generate-001
+veo-2.0-generate-001
+veo-3.0-fast-generate-preview
+veo-3.0-generate-preview
+lastFrame	
+Union field
+
+Optional. An image of the first frame of a video to fill the space between. lastFrame can be either a bytesBase64Encoded string that encodes an image or a gcsUri string URI to a Cloud Storage bucket location.
+
+lastFrame is supported by veo-2.0-generate-001 only.
+
+video	
+Union field
+
+Optional. A Veo generated video to extend in length, which can be either a bytesBase64Encoded string that encodes a video or a gcsUri string URI to a Cloud Storage bucket location.
+
+video is supported by veo-2.0-generate-001 only.
+
+referenceImages	
+list[referenceImages]
+
+Optional. A list of up to three asset images or at most one style images that describes the referenceImages for the model to use when generating videos.
+
+referenceImages is supported by veo-2.0-generate-exp in Preview.
+
+referenceImages.image	
+Union field
+
+Optional. Contains the reference images for veo-2.0-generate-exp to use as subject matter input. Each image can be either a bytesBase64Encoded string that encodes an image or a gcsUri string URI to a Cloud Storage bucket location.
+
+referenceImages.referenceType	
+string
+
+Required in a referenceImages object. Specifies the type of reference image provided. The following values are supported:
+
+"asset": The reference image provides assets for the generated video, such as: the scene, an object, or a character.
+"style": The reference image provides style information for the generated videos, such as: scene colors, lighting, or texture.
+bytesBase64Encoded	
+string
+
+A bytes base64-encoded string of an image or video file. Used with the following objects:
+
+image
+video
+lastFrame
+referenceImages.image
+gcsUri	
+string
+
+A string URI to a Cloud Storage bucket location. Used with the following objects:
+
+image
+video
+lastFrame
+referenceImages.image
+mimeType	
+string
+
+Required for the following objects:
+
+image
+video
+lastFrame
+referenceImages.image
+Specifies the mime type of a video or image.
+
+For images, the following mime types are accepted:
+
+image/jpeg
+image/png
+For videos, the following mime types are accepted:
+
+video/mp4
+Parameters
+Parameters
+aspectRatio	
+string
+
+Optional. Specifies the aspect ratio of generated videos. The following are accepted values:
+
+16:9 (default value)
+9:16
+durationSeconds	
+integer
+
+Required. The length in seconds of video files that you want to generate.
+
+The following are the accepted values:
+
+veo-2.0-generate-001: 5-8. The default is 8.
+veo-3.0-generate-preview: 8.
+When using referenceImages: 8.
+enhancePrompt	
+boolean
+
+Optional. Use Gemini to enhance your prompts. Accepted values are true or false. The default value is true.
+
+enhancePrompt isn't supported by veo-3.0-generate-001 or veo-3.0-fast-generate-001.
+
+generateAudio	
+boolean
+
+Required for veo-3.0-generate-preview. Generate audio for the video. Accepted values are true or false.
+
+generateAudio isn't supported by veo-2.0-generate-001 or veo-2.0-generate-exp.
+
+negativePrompt	
+string
+
+Optional. A text string that describes anything you want to discourage the model from generating. For example:
+
+overhead lighting, bright colors
+people, animals
+multiple cars, wind
+personGeneration	
+string
+
+Optional. The safety setting that controls whether people or face generation is allowed. One of the following:
+
+allow_adult (default value): allow generation of adults only
+dont_allow: disallows inclusion of people/faces in images
+resolution	
+string
+
+Optional. Veo 3 models only. The resolution of the generated video. Accepted values are 720p (default) or 1080p.
+
+sampleCount	
+int
+
+Optional. The number of output videos requested. Accepted values are 1-4.
+
+seed	
+uint32
+
+Optional. A number to request to make generated videos deterministic. Adding a seed number with your request without changing other parameters will cause the model to produce the same videos.
+
+The accepted range is 0-4,294,967,295.
+
+storageUri	
+string
+
+Optional. A Cloud Storage bucket URI to store the output video, in the format gs://BUCKET_NAME/SUBDIRECTORY. If a Cloud Storage bucket isn't provided, base64-encoded video bytes are returned in the response.
+
+Sample requests
+Use the following examples to create your own video request:
+
+Text-to-video generation request
+REST
+To test a text prompt by using the Vertex AI Veo API, send a POST request to the publisher model endpoint.
+
+Before using any of the request data, make the following replacements:
+
+PROJECT_ID: A string representing your Google Cloud project ID.
+MODEL_ID: A string respresenting the model ID to use. The following are accepted values:
+"veo-2.0-generate-001"
+"veo-3.0-generate-001"
+"veo-3.0-fast-generate-001"
+"veo-3.0-generate-preview" (Preview)
+"veo-3.0-fast-generate-preview" (Preview)
+TEXT_PROMPT: The text prompt used to guide video generation.
+OUTPUT_STORAGE_URI: Optional: A string representing the Cloud Storage bucket to store the output videos. If not provided, video bytes are returned in the response. For example: "gs://video-bucket/output/".
+RESPONSE_COUNT: The number of video files to generate. The accepted range of values is 1-4.
+DURATION: An integer representing the length of the generated video files. The following are the accepted values for each model:
+Veo 2 models: 5-8
+Veo 3 models: 8
+Additional optional parameters
+
+HTTP method and URL:
+
+
+
+POST https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID:predictLongRunning
+Request JSON body:
+
+
+
+{
+  "instances": [
+    {
+      "prompt": "TEXT_PROMPT"
+    }
+  ],
+  "parameters": {
+    "storageUri": "OUTPUT_STORAGE_URI",
+    "sampleCount": "RESPONSE_COUNT"
+  }
+}
+To send your request, choose one of these options:
+
+curl
+PowerShell
+Note: The following command assumes that you have logged in to the gcloud CLI with your user account by running gcloud init or gcloud auth login , or by using Cloud Shell, which automatically logs you into the gcloud CLI . You can check the currently active account by running gcloud auth list.
+Save the request body in a file named request.json, and execute the following command:
+
+
+
+curl -X POST \
+     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     -H "Content-Type: application/json; charset=utf-8" \
+     -d @request.json \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID:predictLongRunning"
+This request returns a full operation name with a unique operation ID. Use this full operation name to poll that status of the video generation request.
+
+{
+  "name": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID/operations/a1b07c8e-7b5a-4aba-bb34-3e1ccb8afcc8"
+}
+Image-to-video generation request
+REST
+To test a text prompt by using the Vertex AI Veo API, send a POST request to the publisher model endpoint.
+
+Before using any of the request data, make the following replacements:
+
+PROJECT_ID: A string representing your Google Cloud project ID.
+MODEL_ID: A string respresenting the model ID to use. The following are accepted values:
+veo-2.0-generate-001 (GA)
+veo-3.0-generate-preview (Preview)
+TEXT_PROMPT: The text prompt used to guide video generation.
+INPUT_IMAGE: A base64-encoded string that represents the input image. For best quality, we recommend that the input image's resolution be 720p (1280 x 720 pixels) or higher, and have an aspect ratio of either 16:9 or 9:16. Images of other aspect ratios or sizes may be resized or centrally cropped when the image is uploaded.
+MIME_TYPE: A string representing the MIME type of the input image. Only the images of the following MIME types are supported:
+"image/jpeg"
+"image/png"
+OUTPUT_STORAGE_URI: Optional: A string representing the Cloud Storage bucket to store the output videos. If not provided, video bytes are returned in the response. For example: "gs://video-bucket/output/".
+RESPONSE_COUNT: The number of video files to generate. The accepted range of values is 1-4.
+DURATION: An integer representing the length of the generated video files. The following are the accepted values for each model:
+Veo 2 models: 5-8
+Veo 3 models: 8
+Additional optional parameters
+
+HTTP method and URL:
+
+
+
+POST https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID:predictLongRunning
+Request JSON body:
+
+
+
+{
+  "instances": [
+    {
+      "prompt": "TEXT_PROMPT",
+      "image": {
+        "bytesBase64Encoded": "INPUT_IMAGE",
+        "mimeType": "MIME_TYPE"
+      }
+    }
+  ],
+  "parameters": {
+    "storageUri": "OUTPUT_STORAGE_URI",
+    "sampleCount": RESPONSE_COUNT
+  }
+}
+To send your request, choose one of these options:
+
+curl
+PowerShell
+Note: The following command assumes that you have logged in to the gcloud CLI with your user account by running gcloud init or gcloud auth login , or by using Cloud Shell, which automatically logs you into the gcloud CLI . You can check the currently active account by running gcloud auth list.
+Save the request body in a file named request.json, and execute the following command:
+
+
+
+curl -X POST \
+     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     -H "Content-Type: application/json; charset=utf-8" \
+     -d @request.json \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID:predictLongRunning"
+This request returns a full operation name with a unique operation ID. Use this full operation name to poll that status of the video generation request.
+
+{
+  "name": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID/operations/a1b07c8e-7b5a-4aba-bb34-3e1ccb8afcc8"
+}
+Video request using asset images
+REST
+To test a text prompt by using the Vertex AI Veo API, send a POST request to the publisher model endpoint.
+
+Before using any of the request data, make the following replacements:
+
+PROJECT_ID: Your Google Cloud project ID.
+TEXT_PROMPT: The text prompt used to guide video generation.
+BASE64_ENCODED_IMAGE: A base64-bytes encoded subject image. You can repeat this field and mimeType to specify up to three subject images.
+IMAGE_MIME_TYPE: The MIME type of the input image. Only one of the following:
+
+image/jpeg
+image/png
+You can repeat this field and bytesBase64Encoded to specify up to three subject images.
+
+OUTPUT_STORAGE_URI: Optional: The Cloud Storage bucket to store the output videos. If not provided, a Base64-bytes encoded video is returned in the response. For example: gs://video-bucket/output/.
+RESPONSE_COUNT: The number of video files you want to generate. Accepted integer values: 1-4.
+Additional optional parameters
+
+HTTP method and URL:
+
+
+
+POST https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/veo-2.0-generate-001:predictLongRunning
+Request JSON body:
+
+
+
+{
+  "instances": [
+    {
+      "prompt": "TEXT_PROMPT",
+      // The following fields can be repeated for up to three total
+      // images.
+      "referenceImages": [
+        {
+          "image": {
+            "bytesBase64Encoded": "BASE64_ENCODED_IMAGE",
+            "mimeType": "IMAGE_MIME_TYPE"
+          },
+          "referenceType": "asset"
+        }
+      ]
+    }
+  ],
+  "parameters": {
+    "durationSeconds": 8,
+    "storageUri": "OUTPUT_STORAGE_URI",
+    "sampleCount": RESPONSE_COUNT
+  }
+}
+To send your request, choose one of these options:
+
+curl
+PowerShell
+Note: The following command assumes that you have logged in to the gcloud CLI with your user account by running gcloud init or gcloud auth login , or by using Cloud Shell, which automatically logs you into the gcloud CLI . You can check the currently active account by running gcloud auth list.
+Save the request body in a file named request.json, and execute the following command:
+
+
+
+curl -X POST \
+     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     -H "Content-Type: application/json; charset=utf-8" \
+     -d @request.json \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/veo-2.0-generate-001:predictLongRunning"
+This request returns a full operation name with a unique operation ID. Use this full operation name to poll that status of the video generation request.
+
+{
+  "name": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/veo-2.0-generate-001/operations/a1b07c8e-7b5a-4aba-bb34-3e1ccb8afcc8"
+}
+Video request using a style image
+REST
+To test a text prompt by using the Vertex AI Veo API, send a POST request to the publisher model endpoint.
+
+Before using any of the request data, make the following replacements:
+
+PROJECT_ID: Your Google Cloud project ID.
+TEXT_PROMPT: The text prompt used to guide video generation.
+BASE64_ENCODED_IMAGE: A base64-bytes encoded style image.
+IMAGE_MIME_TYPE: The MIME type of the input image. Only one of the following:
+image/jpeg
+image/png
+OUTPUT_STORAGE_URI: Optional: The Cloud Storage bucket to store the output videos. If not provided, video bytes are returned in the response. For example: gs://video-bucket/output/.
+RESPONSE_COUNT: The number of video files you want to generate. Accepted integer values: 1-4.
+Additional optional parameters
+
+HTTP method and URL:
+
+
+
+POST https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/veo-2.0-generate-001:predictLongRunning
+Request JSON body:
+
+
+
+{
+  "instances": [
+    {
+      "prompt": "TEXT_PROMPT",
+      "referenceImages": [
+        {
+          "image": {
+            "bytesBase64Encoded": "BASE64_ENCODED_IMAGE",
+            "mimeType": "IMAGE_MIME_TYPE"
+          },
+          "referenceType": "style"
+        }
+      ]
+    }
+  ],
+  "parameters": {
+    "durationSeconds": 8,
+    "storageUri": "OUTPUT_STORAGE_URI",
+    "sampleCount": RESPONSE_COUNT
+  }
+}
+To send your request, choose one of these options:
+
+curl
+PowerShell
+Note: The following command assumes that you have logged in to the gcloud CLI with your user account by running gcloud init or gcloud auth login , or by using Cloud Shell, which automatically logs you into the gcloud CLI . You can check the currently active account by running gcloud auth list.
+Save the request body in a file named request.json, and execute the following command:
+
+
+
+curl -X POST \
+     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     -H "Content-Type: application/json; charset=utf-8" \
+     -d @request.json \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/veo-2.0-generate-001:predictLongRunning"
+This request returns a full operation name with a unique operation ID. Use this full operation name to poll that status of the video generation request.
+
+{
+  "name": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/veo-2.0-generate-001/operations/a1b07c8e-7b5a-4aba-bb34-3e1ccb8afcc8"
+}
+Poll the status of the video generation long-running operation
+Check the status of the video generation long-running operation.
+
+REST
+
+Before using any of the request data, make the following replacements:
+
+PROJECT_ID: Your Google Cloud project ID.
+MODEL_ID: The model ID to use.
+OPERATION_ID: The unique operation ID returned in the original generate video request.
+HTTP method and URL:
+
+
+
+POST https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID:fetchPredictOperation
+Request JSON body:
+
+
+
+{
+  "operationName": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID/operations/OPERATION_ID"
+}
+To send your request, choose one of these options:
+
+curl
+PowerShell
+Note: The following command assumes that you have logged in to the gcloud CLI with your user account by running gcloud init or gcloud auth login , or by using Cloud Shell, which automatically logs you into the gcloud CLI . You can check the currently active account by running gcloud auth list.
+Save the request body in a file named request.json, and execute the following command:
+
+
+
+curl -X POST \
+     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     -H "Content-Type: application/json; charset=utf-8" \
+     -d @request.json \
+     "https://us-central1-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID:fetchPredictOperation"
+This request returns information about the operation, including if the operation is still running or is done.
+Response
+Response body (generate video request)
+Sending a text-to-video or image-to-video request returns the following response:
+
+
+
+{
+  "name": string
+}
+Response element	Description
+name	The full operation name of the long-running operation that begins after a video generation request is sent.
+Sample response (generate video request)
+
+
+{
+  "name": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID/operations/OPERATION_ID"
+}
+Response body (poll long-running operation)
+Polling the status of the original video generation long-running operation returns a response similar to the following:
+
+
+
+{
+   "name": string,
+   "done": boolean,
+   "response":{
+      "@type":"type.googleapis.com/cloud.ai.large_models.vision.GenerateVideoResponse",
+      "raiMediaFilteredCount": integer,
+      "videos":[
+         {
+           "gcsUri": string,
+           "mimeType": string
+         },
+         {
+           "gcsUri": string,
+           "mimeType": string
+         },
+         {
+           "gcsUri": string,
+           "mimeType": string
+         },
+         {
+           "gcsUri": string,
+           "mimeType": string
+         },
+      ]
+   }
+}
+Note: If you didn't specify a Cloud Storage bucket URI in storageUri, then the videos object returns bytesBase64Encoded strings.
+Response element	Description
+bytesBase64Encoded	A Base64 bytes encoded string that represents the video object.
+done	A boolean value that indicates whether the operation is complete.
+encoding	The video encoding type.
+gcsUri	The Cloud Storage URI of the generated video.
+name	The full operation name of the long-running operation that begins after a video generation request is sent.
+raiMediaFilteredCount	Returns a count of videos that Veo filtered due to responsible AI policies. If no videos are filtered, the returned count is 0.
+raiMediaFilteredReasons	Lists the reasons for any Veo filtered videos due to responsible AI policies. For more information, see Safety filter code categories.
+response	The response body of the long-running operation.
+video	The generated video.
+Sample response (poll long-running operation)
+
+
+{
+   "name": "projects/PROJECT_ID/locations/us-central1/publishers/google/models/MODEL_ID/operations/OPERATION_ID",
+   "done":true,
+   "response":{
+      "@type":"type.googleapis.com/cloud.ai.large_models.vision.GenerateVideoResponse",
+      "raiMediaFilteredCount": 0,
+      "videos":[
+        {
+          "gcsUri":"gs://STORAGE_BUCKET/TIMESTAMPED_SUBDIRECTORY/sample_0.mp4",
+          "mimeType":"video/mp4"
+        },
+        {
+          "gcsUri":"gs://STORAGE_BUCKET/TIMESTAMPED_SUBDIRECTORY/sample_1.mp4",
+          "mimeType":"video/mp4"
+        },
+        {
+          "gcsUri":"gs://STORAGE_BUCKET/TIMESTAMPED_SUBDIRECTORY/sample_2.mp4",
+          "mimeType":"video/mp4"
+        },
+        {
+          "gcsUri":"gs://STORAGE_BUCKET/TIMESTAMPED_SUBDIRECTORY/sample_3.mp4",
+          "mimeType":"video/mp4"
+        }
+      ]
+   }
+}
+
+Contoh Kode Resmi dari Dokumentasi
+Python - Veo 3
+python
+import time
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+operation = client.models.generate_videos(
+    model="veo-3.0-generate-preview",
+    prompt="a close-up shot of a golden retriever playing in a field",
+    config=types.GenerateVideosConfig(
+        negative_prompt="barking, woofing",
+    ),
+)
+
+while not operation.done:
+    time.sleep(20)
+    operation = client.operations.get(operation)
+
+generated_video = operation.result.generated_videos
+client.files.download(file=generated_video.video)
+generated_video.video.save("veo3_video.mp4")
+
