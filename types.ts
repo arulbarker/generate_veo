@@ -2,6 +2,7 @@
 export type AspectRatio = '16:9' | '9:16';
 export type Resolution = '720p' | '1080p';
 export type VEOModel = 'veo-2.0-generate-001' | 'veo-3.0-generate-preview';
+export type VideoStatus = 'generating' | 'completed' | 'error';
 
 export interface FormState {
   prompt: string;
@@ -26,11 +27,14 @@ export interface VideoGenerationState {
 
 export interface VideoHistoryItem {
   id: string;
-  videoUrl: string;
+  videoUrl: string | null; // null when still generating
   prompt: string;
   timestamp: string;
   aspectRatio: AspectRatio;
   resolution: Resolution;
   veoModel: VEOModel;
   imageUsed: boolean;
+  status: VideoStatus;
+  loadingMessage?: string;
+  error?: string;
 }

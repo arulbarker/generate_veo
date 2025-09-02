@@ -1,6 +1,6 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import type { FormState, ImageFile, VideoGenerationState, VideoHistoryItem } from './types';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import type { FormState, ImageFile, VideoGenerationState, VideoHistoryItem, VideoStatus } from './types';
 import { generateVEOVideo } from './services/geminiService';
 import { LOADING_MESSAGES } from './constants';
 import Header from './components/Header';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
     error: null,
   });
   const [videoHistory, setVideoHistory] = useState<VideoHistoryItem[]>([]);
+  const generationCounterRef = useRef(0);
 
   // Load video history from localStorage on component mount
   useEffect(() => {
@@ -75,6 +76,12 @@ const App: React.FC = () => {
     setVideoHistory([]);
   }, [videoHistory]);
 
+  const updateHistoryItem = useCallback((id: string, updates: Partial<VideoHistoryItem>) => {
+    setVideoHistory(prev => 
+      prev.map(item => item.id === id ? { ...item, ...updates } : item)
+    );
+  }, []);
+
   const handleGenerateVideo = async () => {
     if (!apiKey.trim()) {
       setVideoState(prevState => ({ ...prevState, error: 'Please enter your Gemini API key first.' }));
@@ -85,48 +92,72 @@ const App: React.FC = () => {
       setVideoState(prevState => ({ ...prevState, error: 'Prompt cannot be empty.' }));
       return;
     }
+
+    // Generate unique ID for this generation
+    generationCounterRef.current += 1;
+    const generationId = `${Date.now()}-${generationCounterRef.current}`;
     
-    // Clean up previous video URL to prevent memory leaks
-    if (videoState.videoUrl) {
-      URL.revokeObjectURL(videoState.videoUrl);
-    }
-    
-    setVideoState({
-      videoUrl: null,
-      isLoading: true,
+    // Create initial history item in "generating" state
+    const initialHistoryItem: VideoHistoryItem = {
+      id: generationId,
+      videoUrl: null, // Will be set when completed
+      prompt: formState.prompt,
+      timestamp: new Date().toLocaleString(),
+      aspectRatio: formState.aspectRatio,
+      resolution: formState.resolution,
+      veoModel: formState.veoModel,
+      imageUsed: imageFile !== null,
+      status: 'generating',
       loadingMessage: LOADING_MESSAGES[0],
-      error: null,
-    });
+    };
+    
+    // Add to history immediately (newest first)
+    setVideoHistory(prev => [initialHistoryItem, ...prev]);
 
-    try {
-      const onProgress = (message: string) => {
-        setVideoState(prevState => ({ ...prevState, loadingMessage: message }));
-      };
+    // Clear any previous error in main video state
+    setVideoState(prev => ({ ...prev, error: null }));
+    
+    // Start generation asynchronously (non-blocking)
+    (async () => {
+      try {
+        const onProgress = (message: string) => {
+          updateHistoryItem(generationId, { loadingMessage: message });
+        };
 
-      const videoBlob = await generateVEOVideo(formState, imageFile, onProgress, apiKey);
-      const url = URL.createObjectURL(videoBlob);
-      
-      // Create history item
-      const historyItem: VideoHistoryItem = {
-        id: Date.now().toString(),
-        videoUrl: url,
-        prompt: formState.prompt,
-        timestamp: new Date().toLocaleString(),
-        aspectRatio: formState.aspectRatio,
-        resolution: formState.resolution,
-        veoModel: formState.veoModel,
-        imageUsed: imageFile !== null,
-      };
-      
-      // Add to history (newest first)
-      setVideoHistory(prev => [historyItem, ...prev]);
-      
-      setVideoState({ videoUrl: url, isLoading: false, loadingMessage: '', error: null });
-    } catch (err: unknown) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-      setVideoState({ videoUrl: null, isLoading: false, loadingMessage: '', error: errorMessage });
-    }
+        // Capture current form state and image file for this specific generation
+        const currentFormState = { ...formState };
+        const currentImageFile = imageFile;
+
+        const videoBlob = await generateVEOVideo(currentFormState, currentImageFile, onProgress, apiKey);
+        const url = URL.createObjectURL(videoBlob);
+        
+        // Update history item to completed state
+        updateHistoryItem(generationId, {
+          videoUrl: url,
+          status: 'completed',
+          loadingMessage: undefined,
+        });
+
+        // Update main video state to show latest completed video
+        setVideoState({ 
+          videoUrl: url, 
+          isLoading: false, 
+          loadingMessage: '', 
+          error: null 
+        });
+
+      } catch (err: unknown) {
+        console.error(`Generation ${generationId} failed:`, err);
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        
+        // Update history item to error state
+        updateHistoryItem(generationId, {
+          status: 'error',
+          error: errorMessage,
+          loadingMessage: undefined,
+        });
+      }
+    })();
   };
   
   // Effect for cycling loading messages
@@ -275,10 +306,10 @@ const App: React.FC = () => {
             
             <button
               onClick={handleGenerateVideo}
-              disabled={videoState.isLoading || !formState.prompt || !apiKey}
+              disabled={!formState.prompt || !apiKey}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center gap-2 text-lg"
             >
-              {videoState.isLoading ? 'Generating...' : 'Generate Video'}
+              Generate Video
             </button>
           </div>
           
