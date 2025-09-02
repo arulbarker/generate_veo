@@ -30,7 +30,7 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
 
   if (history.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 shadow-lg h-full flex flex-col">
+      <div className="bg-gray-800 rounded-lg p-6 shadow-lg h-full flex flex-col min-h-[400px]">
         <h3 className="text-lg font-semibold text-white mb-4">📚 Video History</h3>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-gray-400 text-center">No videos generated yet. Create your first video!</p>
@@ -40,8 +40,8 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-lg h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-gray-800 rounded-lg shadow-lg h-full flex flex-col min-h-[400px]">
+      <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b border-gray-700">
         <h3 className="text-lg font-semibold text-white">📚 Video History ({history.length})</h3>
         {history.length > 0 && (
           <button
@@ -53,7 +53,8 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
         )}
       </div>
       
-      <div className="space-y-4 flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-6 pt-4 scrollbar-thin scrollbar-track-gray-700 scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400">
+        <div className="space-y-4">
         {history.map((item) => (
           <div key={item.id} className="bg-gray-700 rounded-lg p-4 border border-gray-600">
             <div className="flex items-start justify-between gap-3">
@@ -136,6 +137,7 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
             </div>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );

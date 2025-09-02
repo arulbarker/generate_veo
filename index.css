@@ -15,3 +15,22 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Custom Scrollbar Styles */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-track-gray-700::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 3px;
+}
+
+.scrollbar-thumb-gray-500::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+.scrollbar-thumb-gray-500::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

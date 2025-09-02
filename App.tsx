@@ -267,9 +267,9 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
       <Header />
       <main className="container mx-auto p-4 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-12 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-12 lg:items-start lg:h-[calc(100vh-200px)]">
           {/* Left Column: Controls */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6" id="left-panel">
             {/* API Key Input */}
             <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
               <h3 className="text-lg font-semibold text-white mb-4">🔑 API Key</h3>
@@ -314,8 +314,8 @@ const App: React.FC = () => {
           </div>
           
           {/* Right Column: Output & History */}
-          <div className="mt-8 lg:mt-0 flex flex-col">
-            <div className="mb-6">
+          <div className="mt-8 lg:mt-0 flex flex-col lg:h-full">
+            <div className="flex-shrink-0 mb-6">
               <VideoOutput
                 videoUrl={videoState.videoUrl}
                 isLoading={videoState.isLoading}
@@ -324,7 +324,7 @@ const App: React.FC = () => {
               />
             </div>
             
-            <div className="min-h-[600px] lg:min-h-[700px]">
+            <div className="flex-1 min-h-0">
               <VideoHistory
                 history={videoHistory}
                 onDeleteVideo={handleDeleteVideo}
