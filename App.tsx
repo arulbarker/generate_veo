@@ -267,7 +267,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">
       <Header />
       <main className="container mx-auto p-4 lg:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-12 lg:items-start">
           {/* Left Column: Controls */}
           <div className="flex flex-col gap-6">
             {/* API Key Input */}
@@ -314,19 +314,23 @@ const App: React.FC = () => {
           </div>
           
           {/* Right Column: Output & History */}
-          <div className="mt-8 lg:mt-0 space-y-6">
-            <VideoOutput
-              videoUrl={videoState.videoUrl}
-              isLoading={videoState.isLoading}
-              loadingMessage={videoState.loadingMessage}
-              error={videoState.error}
-            />
+          <div className="mt-8 lg:mt-0 flex flex-col">
+            <div className="mb-6">
+              <VideoOutput
+                videoUrl={videoState.videoUrl}
+                isLoading={videoState.isLoading}
+                loadingMessage={videoState.loadingMessage}
+                error={videoState.error}
+              />
+            </div>
             
-            <VideoHistory
-              history={videoHistory}
-              onDeleteVideo={handleDeleteVideo}
-              onClearHistory={handleClearHistory}
-            />
+            <div className="min-h-[600px] lg:min-h-[700px]">
+              <VideoHistory
+                history={videoHistory}
+                onDeleteVideo={handleDeleteVideo}
+                onClearHistory={handleClearHistory}
+              />
+            </div>
           </div>
         </div>
       </main>

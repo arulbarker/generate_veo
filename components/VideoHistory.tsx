@@ -30,15 +30,17 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
 
   if (history.length === 0) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
+      <div className="bg-gray-800 rounded-lg p-6 shadow-lg h-full flex flex-col">
         <h3 className="text-lg font-semibold text-white mb-4">📚 Video History</h3>
-        <p className="text-gray-400 text-center py-8">No videos generated yet. Create your first video!</p>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400 text-center">No videos generated yet. Create your first video!</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
+    <div className="bg-gray-800 rounded-lg p-6 shadow-lg h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-white">📚 Video History ({history.length})</h3>
         {history.length > 0 && (
@@ -51,7 +53,7 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
         )}
       </div>
       
-      <div className="space-y-4 max-h-96 overflow-y-auto">
+      <div className="space-y-4 flex-1 overflow-y-auto">
         {history.map((item) => (
           <div key={item.id} className="bg-gray-700 rounded-lg p-4 border border-gray-600">
             <div className="flex items-start justify-between gap-3">
