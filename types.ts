@@ -21,3 +21,13 @@ export interface VideoGenerationState {
   loadingMessage: string;
   error: string | null;
 }
+
+export interface VideoHistoryItem {
+  id: string;
+  videoUrl: string;
+  prompt: string;
+  timestamp: string;
+  aspectRatio: AspectRatio;
+  resolution: Resolution;
+  imageUsed: boolean;
+}

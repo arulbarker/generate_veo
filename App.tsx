@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import type { FormState, ImageFile, VideoGenerationState } from './types';
+import type { FormState, ImageFile, VideoGenerationState, VideoHistoryItem } from './types';
 import { generateVEOVideo } from './services/geminiService';
 import { LOADING_MESSAGES } from './constants';
 import Header from './components/Header';
@@ -8,6 +8,7 @@ import PromptInput from './components/PromptInput';
 import ImageUploader from './components/ImageUploader';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import VideoOutput from './components/VideoOutput';
+import VideoHistory from './components/VideoHistory';
 import { DownloadIcon } from './components/icons';
 
 const App: React.FC = () => {
@@ -25,6 +26,24 @@ const App: React.FC = () => {
     loadingMessage: '',
     error: null,
   });
+  const [videoHistory, setVideoHistory] = useState<VideoHistoryItem[]>([]);
+
+  // Load video history from localStorage on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('video-history');
+    if (savedHistory) {
+      try {
+        setVideoHistory(JSON.parse(savedHistory));
+      } catch (error) {
+        console.error('Failed to load video history:', error);
+      }
+    }
+  }, []);
+
+  // Save video history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('video-history', JSON.stringify(videoHistory));
+  }, [videoHistory]);
 
   const handleFormChange = useCallback((updates: Partial<FormState>) => {
     setFormState(prevState => ({ ...prevState, ...updates }));
@@ -33,6 +52,27 @@ const App: React.FC = () => {
   const handleImageUpload = useCallback((file: ImageFile | null) => {
     setImageFile(file);
   }, []);
+
+  const handleDeleteVideo = useCallback((id: string) => {
+    setVideoHistory(prev => {
+      const itemToDelete = prev.find(item => item.id === id);
+      if (itemToDelete && itemToDelete.videoUrl) {
+        // Revoke the object URL to free memory
+        URL.revokeObjectURL(itemToDelete.videoUrl);
+      }
+      return prev.filter(item => item.id !== id);
+    });
+  }, []);
+
+  const handleClearHistory = useCallback(() => {
+    // Revoke all object URLs to free memory
+    videoHistory.forEach(item => {
+      if (item.videoUrl) {
+        URL.revokeObjectURL(item.videoUrl);
+      }
+    });
+    setVideoHistory([]);
+  }, [videoHistory]);
 
   const handleGenerateVideo = async () => {
     if (!apiKey.trim()) {
@@ -64,6 +104,21 @@ const App: React.FC = () => {
 
       const videoBlob = await generateVEOVideo(formState, imageFile, onProgress, apiKey);
       const url = URL.createObjectURL(videoBlob);
+      
+      // Create history item
+      const historyItem: VideoHistoryItem = {
+        id: Date.now().toString(),
+        videoUrl: url,
+        prompt: formState.prompt,
+        timestamp: new Date().toLocaleString(),
+        aspectRatio: formState.aspectRatio,
+        resolution: formState.resolution,
+        imageUsed: imageFile !== null,
+      };
+      
+      // Add to history (newest first)
+      setVideoHistory(prev => [historyItem, ...prev]);
+      
       setVideoState({ videoUrl: url, isLoading: false, loadingMessage: '', error: null });
     } catch (err: unknown) {
       console.error(err);
@@ -225,13 +280,19 @@ const App: React.FC = () => {
             </button>
           </div>
           
-          {/* Right Column: Output */}
-          <div className="mt-8 lg:mt-0">
+          {/* Right Column: Output & History */}
+          <div className="mt-8 lg:mt-0 space-y-6">
             <VideoOutput
               videoUrl={videoState.videoUrl}
               isLoading={videoState.isLoading}
               loadingMessage={videoState.loadingMessage}
               error={videoState.error}
+            />
+            
+            <VideoHistory
+              history={videoHistory}
+              onDeleteVideo={handleDeleteVideo}
+              onClearHistory={handleClearHistory}
             />
           </div>
         </div>
