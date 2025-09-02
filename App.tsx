@@ -18,6 +18,7 @@ const App: React.FC = () => {
     aspectRatio: '16:9',
     soundEnabled: true,
     resolution: '1080p',
+    veoModel: 'veo-3.0-generate-preview',
   });
   const [imageFile, setImageFile] = useState<ImageFile | null>(null);
   const [videoState, setVideoState] = useState<VideoGenerationState>({
@@ -113,6 +114,7 @@ const App: React.FC = () => {
         timestamp: new Date().toLocaleString(),
         aspectRatio: formState.aspectRatio,
         resolution: formState.resolution,
+        veoModel: formState.veoModel,
         imageUsed: imageFile !== null,
       };
       

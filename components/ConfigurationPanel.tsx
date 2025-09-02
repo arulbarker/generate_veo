@@ -1,6 +1,6 @@
 
 import React from 'react';
-import type { FormState, AspectRatio, Resolution } from '../types';
+import type { FormState, AspectRatio, Resolution, VEOModel } from '../types';
 
 interface ConfigurationPanelProps {
   formState: FormState;
@@ -33,6 +33,25 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({ formState, onFo
     <div className={`bg-gray-800 p-4 rounded-lg border border-gray-700 transition-opacity duration-300 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
       <h3 className="text-lg font-semibold text-gray-300 mb-4">Configuration</h3>
       <div className="space-y-4">
+        {/* VEO Model Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2">VEO Model</label>
+          <div className="space-y-2">
+            <OptionButton value="veo-3.0-generate-preview" selectedValue={formState.veoModel} onClick={(v) => handleOptionChange('veoModel', v as VEOModel)}>
+              <div className="text-left">
+                <div className="font-semibold">VEO 3 (Preview)</div>
+                <div className="text-xs text-gray-400">8s, 720p, with audio</div>
+              </div>
+            </OptionButton>
+            <OptionButton value="veo-2.0-generate-001" selectedValue={formState.veoModel} onClick={(v) => handleOptionChange('veoModel', v as VEOModel)}>
+              <div className="text-left">
+                <div className="font-semibold">VEO 2 (Stable)</div>
+                <div className="text-xs text-gray-400">5-8s, 720p, no audio</div>
+              </div>
+            </OptionButton>
+          </div>
+        </div>
+
         {/* Aspect Ratio */}
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-2">Aspect Ratio</label>

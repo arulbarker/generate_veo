@@ -53,6 +53,13 @@ const VideoHistory: React.FC<VideoHistoryProps> = ({ history, onDeleteVideo, onC
                   {item.prompt}
                 </p>
                 <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                  <span className={`px-2 py-1 rounded text-white ${
+                    item.veoModel === 'veo-3.0-generate-preview' 
+                      ? 'bg-green-600' 
+                      : 'bg-blue-600'
+                  }`}>
+                    {item.veoModel === 'veo-3.0-generate-preview' ? 'VEO 3' : 'VEO 2'}
+                  </span>
                   <span className="bg-gray-600 px-2 py-1 rounded">
                     {item.aspectRatio}
                   </span>

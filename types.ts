@@ -1,12 +1,14 @@
 
 export type AspectRatio = '16:9' | '9:16';
 export type Resolution = '720p' | '1080p';
+export type VEOModel = 'veo-2.0-generate-001' | 'veo-3.0-generate-preview';
 
 export interface FormState {
   prompt: string;
   aspectRatio: AspectRatio;
   soundEnabled: boolean;
   resolution: Resolution;
+  veoModel: VEOModel;
 }
 
 export interface ImageFile {
@@ -29,5 +31,6 @@ export interface VideoHistoryItem {
   timestamp: string;
   aspectRatio: AspectRatio;
   resolution: Resolution;
+  veoModel: VEOModel;
   imageUsed: boolean;
 }
