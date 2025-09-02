@@ -3,19 +3,20 @@ import { GoogleGenAI } from '@google/genai';
 import type { FormState, ImageFile } from '../types';
 import { VEO_MODEL_NAME } from '../constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
 // Helper to wait for a specific duration
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const generateVEOVideo = async (
   formState: FormState,
   imageFile: ImageFile | null,
-  onProgress: (message: string) => void
+  onProgress: (message: string) => void,
+  apiKey: string
 ): Promise<Blob> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
+  if (!apiKey) {
+    throw new Error("API Key is required. Please enter your Gemini API key.");
   }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   onProgress('Starting video generation process...');
 
@@ -64,7 +65,7 @@ export const generateVEOVideo = async (
     throw new Error('Video generation succeeded, but no download link was found.');
   }
 
-  const videoUrl = `${downloadLink}&key=${process.env.API_KEY}`;
+  const videoUrl = `${downloadLink}&key=${apiKey}`;
   
   const response = await fetch(videoUrl);
 

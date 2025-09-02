@@ -11,6 +11,7 @@ import VideoOutput from './components/VideoOutput';
 import { DownloadIcon } from './components/icons';
 
 const App: React.FC = () => {
+  const [apiKey, setApiKey] = useState<string>('');
   const [formState, setFormState] = useState<FormState>({
     prompt: 'A majestic lion roaring on a cliff at sunset, cinematic lighting',
     aspectRatio: '16:9',
@@ -34,6 +35,11 @@ const App: React.FC = () => {
   }, []);
 
   const handleGenerateVideo = async () => {
+    if (!apiKey.trim()) {
+      setVideoState(prevState => ({ ...prevState, error: 'Please enter your Gemini API key first.' }));
+      return;
+    }
+    
     if (!formState.prompt.trim()) {
       setVideoState(prevState => ({ ...prevState, error: 'Prompt cannot be empty.' }));
       return;
@@ -56,7 +62,7 @@ const App: React.FC = () => {
         setVideoState(prevState => ({ ...prevState, loadingMessage: message }));
       };
 
-      const videoBlob = await generateVEOVideo(formState, imageFile, onProgress);
+      const videoBlob = await generateVEOVideo(formState, imageFile, onProgress, apiKey);
       const url = URL.createObjectURL(videoBlob);
       setVideoState({ videoUrl: url, isLoading: false, loadingMessage: '', error: null });
     } catch (err: unknown) {
@@ -176,6 +182,22 @@ const App: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-12">
           {/* Left Column: Controls */}
           <div className="flex flex-col gap-6">
+            {/* API Key Input */}
+            <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-white mb-4">🔑 API Key</h3>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key from Google AI Studio"
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={videoState.isLoading}
+              />
+              <p className="text-gray-400 text-sm mt-2">
+                Get your API key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300">Google AI Studio</a>
+              </p>
+            </div>
+            
             <PromptInput
               prompt={formState.prompt}
               onPromptChange={(prompt) => handleFormChange({ prompt })}
@@ -196,7 +218,7 @@ const App: React.FC = () => {
             
             <button
               onClick={handleGenerateVideo}
-              disabled={videoState.isLoading || !formState.prompt}
+              disabled={videoState.isLoading || !formState.prompt || !apiKey}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900/50 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 flex items-center justify-center gap-2 text-lg"
             >
               {videoState.isLoading ? 'Generating...' : 'Generate Video'}
