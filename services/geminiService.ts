@@ -21,7 +21,7 @@ export const generateVEOVideo = async (
   onProgress('Starting video generation process...');
 
   const generationOptions: any = {
-    model: veo-3.0-generate-preview,
+    model: "veo-3.0-generate-preview",
     prompt: formState.prompt,
     config: {
       numberOfVideos: 1,
